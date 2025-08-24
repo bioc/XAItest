@@ -68,14 +68,161 @@ if (!require("BiocManager")) {
 BiocManager::install('XAItest')
 ```
 
+# Generate benchmark datasets
+
+The XAItest package provides several benchmark scenarios to evaluate the performance of statistical tests and machine learning methods. These scenarios include both classification and regression problems with different underlying patterns:
+
+**Classification scenarios:**
+- Scenario 1 : Variance Difference
+- Scenario 2 : Bimodal Distribution
+- Scenario 3 : XOR Interaction
+- Scenario 4 : Concentric Circles
+
+**Regression scenarios:**
+- Scenario 5 : Parabolic Relationship
+- Scenario 6 : Rising Sinusoid
+
+These scenarios demonstrate cases where classical statistical tests (t-test, correlation) may fail to detect meaningful patterns, while machine learning approaches and XAI methods can successfully identify the underlying relationships.
+
+```{r scenarios}
+library(XAItest)
+library(gridExtra)
+library(ggplot2)
+
+set.seed(1234)
+
+# Scenario 1: Variance Difference
+df1 <- genScenario(1)
+# Scenario 2: Bimodal Distribution
+df2 <- genScenario(2)
+# Scenario 3: XOR Interaction
+df3 <- genScenario(3)
+# Scenario 4: Concentric Circles
+df4 <- genScenario(4)
+# Scenario 5: Parabolic Relationship
+df5 <- genScenario(5)
+# Scenario 6: Rising Sinusoid
+df6 <- genScenario(6)
+
+# Create plots for each scenario
+p1 <- ggplot(df1, aes(x = norm_noise01, y = diffVar01, color = y)) +
+  geom_point() + scale_color_manual(values = c("orange", "purple")) +
+  ggtitle("Scenario 1:\nVariance Difference")
+p2 <- ggplot(df2, aes(x = norm_noise01, y = biDistrib, color = y)) +
+  geom_point() + scale_color_manual(values = c("orange", "purple")) +
+  ggtitle("Scenario 2:\nBimodal Distribution")
+p3 <- ggplot(df3, aes(x = relVar01, y = relVar02, color = y)) +
+  geom_point() + scale_color_manual(values = c("orange", "purple")) +
+  ggtitle("Scenario 3:\nXOR Interaction")
+p4 <- ggplot(df4, aes(x = relVar01, y = relVar02, color = y)) +
+  geom_point() + scale_color_manual(values = c("orange", "purple")) +
+  ggtitle("Scenario 4:\nConcentric Circles")
+p5 <- ggplot(df5, aes(x = norm_noise01, y = y)) +
+  geom_point() + ggtitle("Scenario 5:\nParabolic Relationship")
+p6 <- ggplot(df6, aes(x = unif_noise01, y = y)) +
+  geom_point() + ggtitle("Scenario 6:\nRising Sinusoid")
+
+# Load required library for grid arrangement
+
+
+# Arrange the plots in a 2x3 grid with width twice the height
+grid.arrange(p1, p2, p3, p4, p5, p6, ncol = 3, nrow = 2,
+             widths = rep(2, 3), heights = rep(1, 2))
+
+```
+
+# Add the `simThresh` simulated variable to the dataset
+
+Objective of this section:
+
+1. Add a simulated variable `simThresh` with XAItest::addSimThresh()
+2. Verify that the p-value (t-test) is well calibrated
+3. Train a decision tree and retrieve Gini importances
+4. Use FI(simThresh) as threshold and identify features that exceed it
+
+Brief explanation:
+addSimThresh() adds a continuous variable "simThresh" constructed to
+achieve a target p-value (default ~0.05) vs the target 'y'. It serves as a reference/benchmark for
+comparing feature importances and p-values.
+
+```{r addSimThresh}
+set.seed(1)
+# Add the simThresh variable to achieve a p-value = 0.0001 between A and B
+df_st <- addSimThresh(df1, pval_target = 0.0001, tolerance = 0.00001)
+df_st[c(1:2,50:51),c(1:3,(ncol(df_st)-2):ncol(df_st))]
+```
+
+We verify that the p-value is indeed close to 0.0001
+
+
+```{r check pvalue}
+grp_A <- df_st$simThresh[df_st$y == "A"]
+grp_B <- df_st$simThresh[df_st$y == "B"]
+tt <- t.test(grp_A, grp_B)
+ tt$p.value
+```
+
+Now we train a decision tree model and compute Gini feature importances to identify which variables are most informative for classification. We'll use the `simThresh` variable's importance as a threshold to determine which features exceed this benchmark.
+
+```{r build dt}
+library(rpart)
+fit <- rpart(y ~ ., data = df_st, method = "class")
+
+imp_raw <- fit$variable.importance
+
+# Significance threshold
+fi_sim <- imp_raw[["simThresh"]]
+fi_sim
+```
+
+Now that we have the threshold, we can identify which features exceed it.
+```{r detect features}
+# Feature Importance
+imp_sorted <- sort(imp_raw, decreasing = TRUE)
+imp_sorted
+# Features above the threshold
+vars_above <- setdiff(names(imp_sorted[imp_sorted > fi_sim]), "simThresh")
+vars_above
+```
+
+These are indeed the key features from scenario 1: two classic mean difference variables (`diff_distrib01` and `diff_distrib02`), and the variance difference variable (`diffVar01`).
+
+Now we will apply the same approach to a regression scenario using `df6`, which contains the rising sinusoid relationship pattern.
+
+```{r addSimThresh regress}
+set.seed(1)
+# Add the simThresh variable to achieve a p-value = 0.00001 for the correlation with `y`
+df_st <- addSimThresh(df6, pval_target = 0.00001, tolerance = 0.000001)
+df_st[1:4,c(1:3,ncol(df_st))]
+
+tt <- cor.test(df_st$y, df_st$simThresh )
+tt$p.value
+
+fit <- rpart(y ~ ., data = df_st)
+
+imp_raw <- fit$variable.importance
+imp_raw
+
+# Significance threshold
+fi_sim <- imp_raw[["simThresh"]]
+fi_sim
+
+# Feature Importance
+imp_sorted <- sort(imp_raw, decreasing = TRUE)
+imp_sorted
+# Features above the threshold
+vars_above <- setdiff(names(imp_sorted[imp_sorted > fi_sim]), "simThresh")
+vars_above
+```
+
+The feature `unif_noise01` is indeed the feature used to build the rising sinusoid `y` feature.
+
+
 # Get feature importance of a SummarizedExperiment dataset
 
 ```{r load libs, message=F}
 # Load the libraries
-library(XAItest)
-library(ggplot2)
 library(ggforce)
-library(gridExtra)
 library(SummarizedExperiment)
 ```
 We consider the RNA-seq data from the *airway* dataset, which contains read
@@ -163,9 +310,9 @@ grid.arrange(p1, p2, p3, ncol = 3, nrow = 1)
 
 We employ the XAI.test function to evaluate the p-values and feature importance
 of each feature. The parameter *simData* is set to TRUE, which instructs the
-function to generate a new feature named *simFeat*, designed to achieve a
+function to generate a new feature named *simThresh*, designed to achieve a
 specified p-value (column *ttest_adjPval*), set at *simPvalTarget = 0.01*.
-The purpose of *simFeat* is to establish a significance threshold for assessing
+The purpose of *simThresh* is to establish a significance threshold for assessing
 feature importance values.
 
 ```{r XAI.test 1 , warning=FALSE}
@@ -225,10 +372,10 @@ the random forest, along with the models used for SHAP and LIME, are much more
 precise.
 
 ```{r fig.width=10, fig.height=10}
-p1 <- plotModel(objXAI, "lm_pval", "biDistrib", "simFeat")
-p2 <- plotModel(objXAI, "RF_feat_imp", "biDistrib", "simFeat")
-p3 <- plotModel(objXAI, "SHAP_feat_imp", "biDistrib", "simFeat")
-p4 <- plotModel(objXAI, "LIME_feat_imp", "biDistrib", "simFeat")
+p1 <- plotModel(objXAI, "lm_pval", "biDistrib", "simThresh")
+p2 <- plotModel(objXAI, "RF_feat_imp", "biDistrib", "simThresh")
+p3 <- plotModel(objXAI, "SHAP_feat_imp", "biDistrib", "simThresh")
+p4 <- plotModel(objXAI, "LIME_feat_imp", "biDistrib", "simThresh")
 grid.arrange(p1, p2, p3, p4, ncol = 2, nrow = 2)
 ```
 
@@ -305,9 +452,9 @@ ggplot(df_simu_regr, aes(x=norm_noise2, y=y)) + geom_point() + theme_bw()
 
 We employ the *XAI.test* function to evaluate the p-values and feature
 importance of each feature. The parameter *simData* is set to TRUE, which
-instructs the function to generate a new feature named *simFeat*, which is
+instructs the function to generate a new feature named *simThresh*, which is
 designed to achieve a specified p-value (column *ttest_adjPval*), set at
-*simPvalTarget = 0.01*. The purpose of *simFeat* is to establish a significance
+*simPvalTarget = 0.01*. The purpose of *simThresh* is to establish a significance
 threshold for assessing feature importance values.
 
 ```{r xai3, warning=FALSE}
@@ -355,6 +502,66 @@ models.
 ```{r}
 modelsOverview(regr_results)
 ```
+
+# Using custom functions
+
+Here is `fctParamFIPV()`, an example of a custom function used in the preprint computations.
+This function still requires further improvements before being production-ready.
+Set `simData=T` to add the `simThresh` variable.
+
+```{r cust fct}
+script_path <- system.file("fctParamFIPV.R", package = "XAItest")
+source(script_path)
+
+xai_res <- XAI.test(df1, y="y", simData=F, customFIPV=list("pimp"=function(data, ...) {
+    fctParamFIPV(data=data, fi_algo="gini", pv_algo="pimp", ml_algo="dt",
+    fi_transfo="none", n_perm=20, shap_nsim = 10, verbose=0, ...)
+}), defaultMethods=c())
+
+xai_res
+```
+
+The number of permutations in PIMP and mProbes is controlled by `n_perm`, at least 100 recommended.
+The number of probes in mProbes, or the number of combinations for SHAP and LIME, is specified by `shap_nsim`.
+
+You can see the compute times for each column:
+```{r times}
+xai_res@computeTimes
+```
+
+
+The available arguments combinations are:
+
+- `ml_algo="dt", fi_algo="gini", pv_algo="pimp"`
+- `ml_algo="dt", fi_algo="gini", pv_algo="mprobes"`
+- `ml_algo="dt", fi_algo="shap", pv_algo="pimp"`
+- `ml_algo="dt", fi_algo="shap", pv_algo="mprobes"`
+- `ml_algo="dt", fi_algo="lime", pv_algo="pimp"`
+- `ml_algo="dt", fi_algo="lime", pv_algo="mprobes"`
+- `ml_algo="rf", fi_algo="gini", pv_algo="pimp"`
+- `ml_algo="rf", fi_algo="gini", pv_algo="mprobes"`
+- `ml_algo="rf", fi_algo="accuracy", pv_algo="pimp"`
+- `ml_algo="rf", fi_algo="accuracy", pv_algo="mprobes"`
+- `ml_algo="rf", fi_algo="shap", pv_algo="pimp"`
+- `ml_algo="rf", fi_algo="shap", pv_algo="mprobes"`
+- `ml_algo="rf", fi_algo="lime", pv_algo="pimp"`
+- `ml_algo="rf", fi_algo="lime", pv_algo="mprobes"`
+- `ml_algo="svm+vallinadot", fi_algo="shap", pv_algo="pimp"`
+- `ml_algo="svm+vallinadot", fi_algo="shap", pv_algo="mprobes"`
+- `ml_algo="svm+vallinadot", fi_algo="lime", pv_algo="pimp"`
+- `ml_algo="svm+vallinadot", fi_algo="lime", pv_algo="mprobes"`
+- `ml_algo="svm-rbfdot", fi_algo="shap", pv_algo="pimp"`
+- `ml_algo="svm-rbfdot", fi_algo="shap", pv_algo="mprobes"`
+- `ml_algo="svm-rbfdot", fi_algo="lime", pv_algo="pimp"`
+- `ml_algo="svm-rbfdot", fi_algo="lime", pv_algo="mprobes"`
+- `ml_algo="mlp", fi_algo="olden", pv_algo="pimp"`
+- `ml_algo="mlp", fi_algo="olden", pv_algo="mprobes"`
+- `ml_algo="mlp", fi_algo="shap", pv_algo="pimp"`
+- `ml_algo="mlp", fi_algo="shap", pv_algo="mprobes"`
+- `ml_algo="mlp", fi_algo="lime", pv_algo="pimp"`
+- `ml_algo="mlp", fi_algo="lime", pv_algo="mprobes"`
+
+
 
 ```{r}
 sessionInfo()
