@@ -20,19 +20,23 @@ genScenario <- function(scenario=1,
     df_simu = data.frame(y=c(rep("A", half_samples), rep("B", remaining_samples)))
     # Noise columns
 
-    noise_columns <- paste0("norm_noise", sprintf("%02d", 1:n_norm_noise_features))
-    df_simu[noise_columns] <- lapply(noise_columns, function(column_name) {
-        mean <- runif(1, min = -10, max = 10)
-        sd <- runif(1, min = 1, max = 5)
-        rnorm(nrow(df_simu), mean = mean, sd = sd)
-    })
+    if ( n_norm_noise_features != 0){
+      noise_columns <- paste0("norm_noise", sprintf("%02d", 1:n_norm_noise_features))
+      df_simu[noise_columns] <- lapply(noise_columns, function(column_name) {
+          mean <- runif(1, min = -10, max = 10)
+          sd <- runif(1, min = 1, max = 5)
+          rnorm(nrow(df_simu), mean = mean, sd = sd)
+      })
+    }
 
-    unif_noise_columns <- paste0("unif_noise", sprintf("%02d", 1:n_unif_noise_features))
-    df_simu[unif_noise_columns] <- lapply(unif_noise_columns, function(column_name) {
-        rand_min <- runif(1, min = -10, max = 0)
-        rand_max <- runif(1, min = 0, max = 10)
-        runif(nrow(df_simu), min = rand_min, max = rand_max)
-    })
+    if ( n_unif_noise_features != 0){
+      unif_noise_columns <- paste0("unif_noise", sprintf("%02d", 1:n_unif_noise_features))
+      df_simu[unif_noise_columns] <- lapply(unif_noise_columns, function(column_name) {
+          rand_min <- runif(1, min = -10, max = 0)
+          rand_max <- runif(1, min = 0, max = 10)
+          runif(nrow(df_simu), min = rand_min, max = rand_max)
+      })
+    }
 
     if (scenario == 1){
         # Distribution columns

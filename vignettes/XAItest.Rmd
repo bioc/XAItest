@@ -89,7 +89,7 @@ library(XAItest)
 library(gridExtra)
 library(ggplot2)
 
-set.seed(1234)
+set.seed(12)
 
 # Scenario 1: Variance Difference
 df1 <- genScenario(1)
@@ -147,12 +147,12 @@ comparing feature importances and p-values.
 
 ```{r addSimThresh}
 set.seed(1)
-# Add the simThresh variable to achieve a p-value = 0.0001 between A and B
-df_st <- addSimThresh(df1, pval_target = 0.0001, tolerance = 0.00001)
+# Add the simThresh variable to achieve a p-value = 0.001 between A and B
+df_st <- addSimThresh(df1, pval_target = 0.001)
 df_st[c(1:2,50:51),c(1:3,(ncol(df_st)-2):ncol(df_st))]
 ```
 
-We verify that the p-value is indeed close to 0.0001
+We verify that the p-value is indeed close to 0.001
 
 
 ```{r check pvalue}
@@ -187,12 +187,12 @@ vars_above
 
 These are indeed the key features from scenario 1: two classic mean difference variables (`diff_distrib01` and `diff_distrib02`), and the variance difference variable (`diffVar01`).
 
-Now we will apply the same approach to a regression scenario using `df6`, which contains the rising sinusoid relationship pattern.
+Now we will apply the same approach to a regression scenario using `df5`, which contains the parabolic relationship pattern.
 
 ```{r addSimThresh regress}
 set.seed(1)
-# Add the simThresh variable to achieve a p-value = 0.00001 for the correlation with `y`
-df_st <- addSimThresh(df6, pval_target = 0.00001, tolerance = 0.000001)
+# Add the simThresh variable to achieve a p-value = 0.001 for the correlation with `y`
+df_st <- addSimThresh(df5, pval_target = 0.001)
 df_st[1:4,c(1:3,ncol(df_st))]
 
 tt <- cor.test(df_st$y, df_st$simThresh )
@@ -215,7 +215,7 @@ vars_above <- setdiff(names(imp_sorted[imp_sorted > fi_sim]), "simThresh")
 vars_above
 ```
 
-The feature `unif_noise01` is indeed the feature used to build the rising sinusoid `y` feature.
+The feature `norm_noise01` is indeed the feature used to build the parabolic `y` feature.
 
 
 # Get feature importance of a SummarizedExperiment dataset
