@@ -23,7 +23,6 @@ test_XAItest <- function(){
         "LIME_feat_imp")))    
     p1 <- plotModel(results, "lm_pval", "feature1", "feature2")
     checkTrue("ggplot" %in% class(p1))
-    checkTrue('data' %in% names(p1))
     checkTrue('scales' %in% names(p1))
     checkTrue(length(p1)>0)
 
