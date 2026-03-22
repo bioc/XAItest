@@ -41,7 +41,8 @@ Examples of these techniques can be found in the analysis of methylation and
 transcriptome data @Rajpal_2023, @Kumar_2023.
 
 The XAItest package aims at proposing a versatile tool to run these types of
-analysis easily. It calculates various p-value based statistics, such as the
+analysis easily. Its benchmarking framework and significance strategy are
+described in @Fievet_2025. It calculates various p-value based statistics, such as the
 t-test or correlation, depending on whether the target variable is categorical
 or numerical. It also computes different XAI matrics such as feature
 importance metrics, by default a built-in method from random forest, an

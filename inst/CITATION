@@ -1,0 +1,21 @@
+citHeader("To cite XAItest and its methodological framework, use:")
+
+citEntry(
+    entry = "Article",
+    title = "The eXplainable Artificial Intelligence (XAI) Triad: Models, Importances, and Significance at Scale",
+    author = personList(
+        as.person("Ghislain Fievet"),
+        as.person("Julien Broseus"),
+        as.person("David Meyre"),
+        as.person("Sebastien Hergalant")
+    ),
+    journal = "bioRxiv",
+    year = "2025",
+    doi = "10.64898/2025.12.06.692723",
+    textVersion = paste(
+        "Fievet G, Broseus J, Meyre D, Hergalant S. (2025).",
+        "The eXplainable Artificial Intelligence (XAI) Triad:",
+        "Models, Importances, and Significance at Scale.",
+        "bioRxiv. doi:10.64898/2025.12.06.692723"
+    )
+)
