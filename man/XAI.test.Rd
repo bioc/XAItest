@@ -18,6 +18,7 @@ XAI.test(
   adjMethod = "bonferroni",
   customPVals = NULL,
   customFeatImps = NULL,
+  customFIPV = NULL,
   modelType = "default",
   corMethod = "pearson",
   defaultMethods = c("ttest", "ebayes", "cor", "lm", "rf", "shap", "lime"),
@@ -71,6 +72,15 @@ variable as arguments and return a names list with:
 functions will be used as the column names in the output dataframe.
 Mandatory.
 \item 'model' => the predictionmodel object. Optional.
+}}
+
+\item{customFIPV}{List of custom functions that compute feature importances
+and corresponding p-values. The functions must take the dataframe and the
+target variable as arguments and return a names list with:
+\itemize{
+\item 'featImps' => a dataframe with the feature importances.
+\item 'pvals' => a dataframe with the corresponding p-values.
+\item 'model' => the prediction model object. Optional.
 }}
 
 \item{modelType}{Type of the model. Can be "classification", "regression" or

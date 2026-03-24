@@ -28,7 +28,7 @@
 #' df_with_sim <- addSimThresh(df, target_column = "y", pval_target = 0.05)
 #'
 #' # Check that the correlation between simThresh and the target variable is close to 0.05
-#' print(cor.test(df_class_with_sim$simThresh, df_class_with_sim$y)$p.value)
+#' print(cor.test(df_with_sim$simThresh, df_with_sim$y)$p.value)
 #' 
 #' # Example with a classification dataset
 #' df_class <- data.frame(
@@ -43,7 +43,7 @@
 #'                                  pval_target = 0.05)
 #'
 #' # Check that the p-value of the simThresh column is close to 0.05
-#' print(t.test(df_class_with_sim$simThresh, df_class_with_sim$y)$p.value)
+#' print(t.test(simThresh ~ y, data = df_class_with_sim)$p.value)
 #'
 #' 
 #' @export
