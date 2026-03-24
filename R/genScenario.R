@@ -1,3 +1,25 @@
+#' Generate benchmark scenarios for feature discovery
+#'
+#' Creates synthetic datasets used in the vignette to compare classical
+#' statistical tests and XAI-based feature discovery methods across several
+#' classification and regression settings.
+#'
+#' @param scenario Integer between 1 and 6 selecting the simulation design.
+#' @param n_samples Number of samples to generate.
+#' @param n_norm_noise_features Number of Gaussian noise features to add.
+#'   Defaults depend on the chosen scenario.
+#' @param n_unif_noise_features Number of uniform noise features to add.
+#'   Defaults depend on the chosen scenario.
+#'
+#' @return A data frame containing the simulated response `y` and the
+#'   corresponding explanatory variables for the selected scenario.
+#'
+#' @examples
+#' df <- genScenario(1, n_samples = 20, n_norm_noise_features = 2)
+#' head(df)
+#'
+#' @importFrom stats runif
+#' @export
 genScenario <- function(scenario=1,
                             n_samples = 100, 
                             n_norm_noise_features = NULL,
@@ -23,8 +45,8 @@ genScenario <- function(scenario=1,
     if ( n_norm_noise_features != 0){
       noise_columns <- paste0("norm_noise", sprintf("%02d", 1:n_norm_noise_features))
       df_simu[noise_columns] <- lapply(noise_columns, function(column_name) {
-          mean <- runif(1, min = -10, max = 10)
-          sd <- runif(1, min = 1, max = 5)
+          mean <- stats::runif(1, min = -10, max = 10)
+          sd <- stats::runif(1, min = 1, max = 5)
           rnorm(nrow(df_simu), mean = mean, sd = sd)
       })
     }
@@ -32,9 +54,9 @@ genScenario <- function(scenario=1,
     if ( n_unif_noise_features != 0){
       unif_noise_columns <- paste0("unif_noise", sprintf("%02d", 1:n_unif_noise_features))
       df_simu[unif_noise_columns] <- lapply(unif_noise_columns, function(column_name) {
-          rand_min <- runif(1, min = -10, max = 0)
-          rand_max <- runif(1, min = 0, max = 10)
-          runif(nrow(df_simu), min = rand_min, max = rand_max)
+          rand_min <- stats::runif(1, min = -10, max = 0)
+          rand_max <- stats::runif(1, min = 0, max = 10)
+          stats::runif(nrow(df_simu), min = rand_min, max = rand_max)
       })
     }
 
@@ -144,7 +166,7 @@ genScenario <- function(scenario=1,
         outer_y <- 4 * sin(theta_outer) + rnorm(n_outer, mean = 0, sd = 0.2)
 
         # Inner circle (radius 0.5) 
-        theta_inner <- runif(n_inner, 0, 2*pi)
+        theta_inner <- stats::runif(n_inner, 0, 2*pi)
         inner_x <- 0.5 * cos(theta_inner) + rnorm(n_inner, mean = 0, sd = 0.2)
         inner_y <- 0.5 * sin(theta_inner) + rnorm(n_inner, mean = 0, sd = 0.2)
 
@@ -179,7 +201,7 @@ genScenario <- function(scenario=1,
         croissSinusoid <- function(x){
             return (sin(x) * x)
         }
-        df_simu[['unif_noise01']] <- runif(nrow(df_simu), min = 0, max = 12.6)
+        df_simu[['unif_noise01']] <- stats::runif(nrow(df_simu), min = 0, max = 12.6)
 
         df_simu$y <- croissSinusoid(df_simu$unif_noise01)
     }
