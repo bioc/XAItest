@@ -544,26 +544,43 @@ genSimulatedFeaturesRegr <- function(data, y="y",
                     pvalTarget=0.01,
                     tolerance=0.0005,
                     sdInf=0,
-                    sdSup=10){
+                    sdSup=10,
+                    maxIter=100L){
+    .safeCorPval <- function(testValues, sdValue) {
+        pval <- suppressWarnings(
+            cor.test(testValues, testValues + .regRNorm(length(testValues), 0, sdValue))$p.value
+        )
+        pval * (nf + 1)
+    }
+
+    if (maxIter <= 0) {
+        return((sdSup + sdInf) / 2)
+    }
+
     newSD <- (sdSup + sdInf)/2
-    tempPval <- cor.test(values, values +
-                    .regRNorm(length(values), 0, newSD))$p.value * (nf+1)
-    #if (abs(tempPval - pvalTarget) < tolerance){
-    if (pvalTarget - tempPval < tolerance && pvalTarget - tempPval > 0){
+    tempPval <- .safeCorPval(values, newSD)
+    if (!is.finite(tempPval)) {
+        return(.findNoiseSD(values, nf, pvalTarget, tolerance,
+                                sdInf=sdInf, sdSup=newSD, maxIter=maxIter - 1L))
+    }
+    if (abs(tempPval - pvalTarget) < tolerance){
         return (newSD)
     }
     if (tempPval - pvalTarget > 0){
         return (.findNoiseSD(values, nf, pvalTarget, tolerance,
-                                sdInf=sdInf, sdSup=newSD))
+                                sdInf=sdInf, sdSup=newSD, maxIter=maxIter - 1L))
     }
-    tempPval <- cor.test(values, values +
-                    .regRNorm(length(values), 0, sdSup))$p.value * (nf+1)
+    tempPval <- .safeCorPval(values, sdSup)
+    if (!is.finite(tempPval)) {
+        return(.findNoiseSD(values, nf, pvalTarget, tolerance,
+                                sdInf=newSD, sdSup=sdSup, maxIter=maxIter - 1L))
+    }
     if (tempPval - pvalTarget < 0){
         return (.findNoiseSD(values, nf, pvalTarget, tolerance,
-                                sdInf=sdSup, sdSup=sdSup*2))
+                                sdInf=sdSup, sdSup=sdSup*2, maxIter=maxIter - 1L))
     } else {
         return (.findNoiseSD(values, nf, pvalTarget, tolerance,
-                                sdInf=newSD, sdSup=sdSup))
+                                sdInf=newSD, sdSup=sdSup, maxIter=maxIter - 1L))
     }
 }
 

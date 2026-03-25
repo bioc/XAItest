@@ -13,6 +13,7 @@ exportMethods(show)
 importFrom(methods,setMethod)
 importFrom(methods,setClass)
 importFrom(methods,setGeneric)
+importFrom(methods,show)
 importFrom("methods", "is", "new", "validObject")
 importFrom(stats,runif)
 importFrom("stats", "as.formula", "cor.test", "lm", "model.matrix",

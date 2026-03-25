@@ -1,3 +1,7 @@
+Changes in version 1.3.2 (2026-03-25)
++ Fix addSimThresh regression example failure caused by NA handling in .findNoiseSD
++ Import methods::show to address the namespace check note
+
 Changes in version 1.3.1 (2026-03-24)
 + Add package citation metadata for Bioconductor landing pages
 + Document exported helper functions and sync XAI.test manual
